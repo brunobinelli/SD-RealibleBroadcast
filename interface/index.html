@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Difusão Confiável — ACK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ── TOP BAR ── -->
+  <header class="topbar">
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <rect x="1" y="1" width="22" height="22" rx="5" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="5"  cy="12" r="2.2" fill="currentColor"/>
+        <circle cx="19" cy="6"  r="1.7" fill="currentColor" opacity=".7"/>
+        <circle cx="19" cy="12" r="1.7" fill="currentColor" opacity=".7"/>
+        <circle cx="19" cy="18" r="1.7" fill="currentColor" opacity=".7"/>
+        <path d="M7 12h7.5M14.5 12l-2-2.3M14.5 12l-2 2.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      Difusão Confiável<span class="logo-sub">ACK-based Reliable Broadcast</span>
+    </div>
+    <div class="topbar-right">
+      <span id="conn-badge" class="conn-badge connecting">
+        <span class="conn-dot"></span>
+        <span id="conn-text">conectando…</span>
+      </span>
+      <button class="toggle-theme btn-icon" data-theme-toggle aria-label="Tema">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── BODY ── -->
+  <div class="body">
+
+    <!-- ══ ESQUERDA: Configuração ══ -->
+    <aside class="panel">
+      <div class="ph">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        <span class="ph-title">Configurações</span>
+      </div>
+      <div class="pb">
+
+        <!-- Servidor -->
+        <div class="srv-box">
+          <div class="srv-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2"/>
+              <rect x="2" y="14" width="20" height="8" rx="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/>
+              <line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+          </div>
+          <div class="srv-info">
+            <div class="srv-title">C++ Backend</div>
+            <div class="srv-url" id="srv-url">localhost:8765</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="showPortDialog()">⚙</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+          <div class="stat"><div class="stat-v" id="st-msgs">0</div><div class="stat-l">Msgs</div></div>
+          <div class="stat"><div class="stat-v" style="color:var(--success)" id="st-acks">0</div><div class="stat-l">ACKs</div></div>
+          <div class="stat"><div class="stat-v" style="color:var(--error)"   id="st-lost">0</div><div class="stat-l">Perdas</div></div>
+          <div class="stat"><div class="stat-v" style="color:var(--warn)"    id="st-ret">0</div><div class="stat-l">Retry</div></div>
+        </div>
+
+        <!-- Enviar mensagem -->
+        <div class="cg">
+          <label class="lbl">Mensagem para difundir</label>
+          <div class="row">
+            <input id="msg-inp" class="inp" type="text" placeholder="Conteúdo…" value="Olá, processos!">
+            <button class="btn btn-primary" id="btn-send" onclick="doBroadcast()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+              Difundir
+            </button>
+          </div>
+        </div>
+
+        <div class="div"></div>
+        <div class="sec-lbl">Parâmetros do Algoritmo</div>
+
+        <div class="cg">
+          <label class="lbl">Timeout ACK (ms)</label>
+          <input id="cfg-timeout" class="inp" type="number" value="1500" min="200" max="10000" step="100" onchange="pushConfig()">
+        </div>
+        <div class="cg">
+          <label class="lbl">Máx. retentativas</label>
+          <input id="cfg-retries" class="inp" type="number" value="3" min="1" max="10" onchange="pushConfig()">
+        </div>
+        <div class="cg">
+          <label class="lbl">Delay de simulação (ms)</label>
+          <input id="cfg-delay" class="inp" type="number" value="300" min="50" max="2000" step="50" onchange="pushConfig()">
+        </div>
+
+        <div class="div"></div>
+        <div class="sec-lbl">Processos Clientes</div>
+
+        <div id="client-list"></div>
+
+        <button class="btn btn-sec" style="width:100%;justify-content:center" onclick="resetClients()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-.09-5.26"/>
+          </svg>
+          Resetar Clientes
+        </button>
+      </div>
+    </aside>
+
+    <!-- ══ CENTRO: Rede visual ══ -->
+    <div class="center">
+      <div class="net-toolbar">
+        <span style="font-size:.75rem;font-weight:600;color:var(--text-muted)">Topologia da Rede</span>
+        <div style="flex:1"></div>
+        <span id="status-txt" style="font-size:.75rem;font-family:var(--mono);color:var(--text-muted)">Aguardando…</span>
+      </div>
+
+      <div class="net-wrap">
+        <canvas id="netCanvas"></canvas>
+        <svg id="animSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <!-- Tabela ACK -->
+      <div class="ack-table-wrap">
+        <div class="sec-lbl">Tabela de ACKs — Mensagens × Clientes</div>
+        <div id="ack-grid">
+          <span style="font-size:.75rem;font-family:var(--mono);color:var(--text-faint)">Nenhuma mensagem.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DIREITA: Log ══ -->
+    <aside class="panel">
+      <div class="ph">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span class="ph-title">Log de Eventos</span>
+        <span id="log-cnt" class="pill p-pend" style="margin-left:auto">0</span>
+        <button class="btn btn-icon btn-ghost btn-sm" onclick="clearLog()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="log-wrap" id="log-wrap">
+        <div class="le le-info">
+          <span class="lt" style="background:var(--surface-off);color:var(--text-faint)">INFO</span>
+          Aguardando conexão com o backend C++…
+        </div>
+      </div>
+
+      <!-- Tabela de mensagens -->
+      <div style="border-top:1px solid var(--border);flex-shrink:0">
+        <div class="ph" style="padding:.5rem .875rem"><span class="ph-title">Mensagens</span></div>
+        <div style="overflow-y:auto;max-height:160px;padding:.375rem">
+          <table class="mt">
+            <thead>
+              <tr><th>#</th><th>Conteúdo</th><th>ACKs</th><th>Status</th></tr>
+            </thead>
+            <tbody id="msg-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-faint);padding:.5rem">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- ── OFFLINE BANNER ── -->
+<div id="offline-banner">⚠ Conexão perdida com o backend. Reconectando…</div>
+
+<!-- ── PORT DIALOG ── -->
+<div id="port-dialog">
+  <div class="dialog-box">
+    <div class="dialog-title">Conectar ao Backend C++</div>
+    <div class="dialog-sub">Informe o endereço e porta onde o servidor está rodando.</div>
+    <div class="cg" style="margin-bottom:.75rem">
+      <label class="lbl">Endereço do servidor</label>
+      <input id="srv-addr" class="inp" value="localhost:8765" placeholder="localhost:8765">
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:.5rem">
+      <button class="btn btn-sec" onclick="closePortDialog()">Cancelar</button>
+      <button class="btn btn-primary" onclick="applyAddr()">Conectar</button>
+    </div>
+  </div>
+</div>
+
+<!--
+  Script loading order matters:
+    1. visual.js  — canvas/SVG refs + draw/animate functions
+    2. ui.js      — DOM render functions + log
+    3. backend.js — SSE connection + HTTP actions + event handlers
+    4. app.js     — shared state + theme + bootstrap (calls connectSSE etc.)
+-->
+<script src="js/visual.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/backend.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
